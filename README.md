@@ -1,67 +1,148 @@
-#  AI-Powered Conflict Resolution Assistant
+# AI Conflict Resolution Assistant
 
-A multi-agent AI system designed to analyze tense text conversations, map emotional escalation, and suggest empathetic, boundary-respecting responses.
+A multi-agent system that analyzes tense text conversations, maps emotional escalation, and suggests empathetic, boundary-respecting replies. It combines lightweight scikit-learn classifiers for line-level emotion and conflict detection with a CrewAI agent crew powered by Groq (Llama 3.1).
 
-This project bridges the gap between automated text analysis (for fast emotion detection) and conversational AI (for reasoning and human-like advice), orchestrated via CrewAI.
+## Features
 
-##  Overview
+- **Automatic classifier setup** — On first import, `ml_models.py` trains TF-IDF + Logistic Regression models on synthetic data and saves them under `models/` for reuse.
+- **Emotional timeline tool** — Agents call `Analyze Emotional Timeline` to label each utterance with emotion and conflict risk before reasoning.
+- **Sequential multi-agent report** — Emotional Analyst → Perspective Balancer → De-escalation Coach produce a structured resolution report.
+- **Low-latency LLM inference** — Language model calls go through Groq (`groq/llama-3.1-8b-instant`).
 
-When humans argue over text, it is easy to misinterpret tone and escalate the conflict. This tool acts as an objective, multi-perspective mediator. It reads a conversation transcript and uses a team of specialized AI agents to break down what went wrong and how to fix it.
+## Architecture
 
-### The Dual-Layer Architecture
+The pipeline has two layers:
 
-1. **The Classification Layer:** A custom machine learning pipeline automatically trains itself on synthetic data to classify *Emotions* (e.g., Frustrated, Accusatory) and *Conflict Risk* (e.g., Boundary Violation, Expectation Mismatch) line-by-line.
-2. **The Agent Layer:** A CrewAI setup powered by Groq (Llama 3.1) takes those structural classifications and reasons over them to generate psychological insights and actionable de-escalation strategies.
+1. **Classification layer** — Synthetic-data classifiers predict emotion (e.g. Frustrated, Accusatory, Neutral, Empathetic, Defensive) and conflict type (e.g. Boundary violation, Expectation mismatch, Respect issue, Trust issue) per line.
+2. **Agent layer** — A CrewAI sequential crew reasons over those labels and drafts response options.
 
-##  Key Features
-
-* **Automated Setup:** The `ml_models.py` script requires no manual configuration. If it doesn't find existing model files on your machine, it automatically generates a baseline dataset, trains the classifiers, and saves them for future use.
-* **Custom Agent Tools:** The classification models are wrapped into a callable tool (`tools.py`), giving the AI agents the ability to instantly detect the emotional tone and conflict risk of a conversation before formulating their advice.
-* **Multi-Agent Orchestration:** Utilizes four distinct personas (Analyst, Balancer, Guardian, and Coach) to ensure the final advice is balanced, safe, and empathetic.
-* **Lightning Fast Inference:** Uses Groq's ultra-low latency infrastructure to power the language models.
-
-##  Repository Structure
-
-* `ml_models.py`: The core classification engine. Handles synthetic data generation, model training, and saving the trained files locally.
-* `tools.py`: The bridge file. Parses raw conversations and packages the classification models into an "Analyze Emotional Timeline" tool for the agents to use.
-* `crew.py`: Defines the language model configuration, the four specific Agent personas, their designated Tasks, and orchestrates the sequential workflow.
-* `main.py`: The entry point. Contains a sample argument and kicks off the multi-agent analysis process.
-
-##  Getting Started
-
-### 1. Prerequisites
-
-You will need Python installed along with the following packages:
-
-```bash
-pip install scikit-learn crewai python-dotenv
-
+```text
+Conversation transcript
+        │
+        ▼
+Analyze Emotional Timeline  ──►  TF-IDF + LogisticRegression
+        │
+        ▼
+Emotional Analyst
+        │
+        ▼
+Perspective Balancer
+        │
+        ▼
+De-escalation Coach
+        │
+        ▼
+Final Resolution Report
 ```
 
-### 2. Environment Setup
+| Agent | Role in the run |
+| --- | --- |
+| Emotional Analyst | Uses the timeline tool; summarizes escalation points |
+| Perspective Balancer | Explains what the other person may be feeling |
+| De-escalation Coach | Synthesizes prior outputs into the final report |
+| Boundary Guardian | Defined and registered in the crew, but **not assigned a task** in the current workflow |
 
-This project uses Groq to power the language models. Create a `.env` file in the root of your project and add your API key securely:
+## Project structure
 
-```bash
-# .env
-GROQ_API_KEY=your_actual_api_key_here
-
+```text
+AI-Conflict-Resolution-Assistant/
+├── main.py              # Entry point; sample conversation and crew kickoff
+├── crew.py              # LLM config, agents, tasks, sequential crew
+├── tools.py             # CrewAI tool wrapping the ML predictors
+├── ml_models.py         # Synthetic data, train/load, emotion & conflict inference
+├── requirements.txt     # Python dependencies
+├── .env.example         # Template for Groq API key
+└── models/              # Created at runtime (vectorizers & classifiers)
 ```
 
-### 3. Run the Assistant
+## Prerequisites
 
-Simply execute the main script. On the first run, it will automatically train the classifiers, save them to a new `models/` directory, and then kick off the multi-agent analysis.
+- Python 3.10 or newer
+- A [Groq](https://console.groq.com/) API key
+
+## Installation
+
+```bash
+python -m venv .venv
+
+# Windows
+.venv\Scripts\activate
+
+# macOS / Linux
+source .venv/bin/activate
+
+pip install -r requirements.txt
+```
+
+## Configuration
+
+Copy the example env file and add your key:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env`:
+
+```bash
+GROQ_API_KEY=your_groq_api_key_here
+```
+
+If the key is missing, the crew still builds but LLM calls will fail; `crew.py` prints a warning when `GROQ_API_KEY` is unset.
+
+## Usage
+
+Run the sample conversation shipped in `main.py`:
 
 ```bash
 python main.py
-
 ```
 
-##  Example Output
+On the first run, classifiers are trained (if `models/` is empty) and then the crew analyzes the transcript.
 
-When you run `main.py`, the agents will analyze the provided sample conversation and output a structured resolution report containing:
+### Analyze your own conversation
 
-1. **Emotional Summary:** A breakdown of who escalated the conversation and where.
-2. **Escalation Points:** Specific lines flagged by the classification tool as highly accusatory or defensive.
-3. **Suggested Responses:** Three distinct ways the user can reply (De-escalation, Boundary-respecting, and Empathy-forward).
-4. **Ethical Disclaimer:** A reminder that human judgment is required before sending AI-generated responses.
+Replace the `sample_conversation` string in `main.py` with lines in `Speaker: utterance` form, for example:
+
+```text
+User: I can't believe you changed the report last minute without telling me.
+Other: You always overreact, it's not a big deal.
+```
+
+Then run `python main.py` again.
+
+## Example output
+
+The De-escalation Coach is instructed to return a report with exactly these sections:
+
+1. **Emotional Summary** — Who escalated and where
+2. **Escalation Points** — Specific messages flagged as high risk
+3. **Suggested Responses**
+   - Option 1: De-escalation
+   - Option 2: Boundary-respecting
+   - Option 3: Empathy-forward
+4. **Ethical Disclaimer** — Reminder that human judgment is required before sending any reply
+
+## How it works
+
+| File | Responsibility |
+| --- | --- |
+| `ml_models.py` | Generates synthetic training data, loads or trains models, exposes `predict_emotion` / `predict_conflict` |
+| `tools.py` | Parses a multi-line transcript and wraps predictions as the `Analyze Emotional Timeline` tool |
+| `crew.py` | Configures Groq LLM, agents, tasks, and `create_crew()` |
+| `main.py` | Builds the crew and prints the final `CrewOutput` |
+
+## Limitations
+
+- Classifiers are trained on a **small synthetic dataset**; they illustrate the pipeline and are not production-grade NLP.
+- This is **not** a substitute for professional mediation, counseling, or legal advice.
+- The Boundary Guardian agent is present in code but does not currently contribute to the task chain.
+- Always apply human judgment before sending AI-suggested messages.
+
+## Contributing
+
+Issues and pull requests are welcome. For larger changes, open an issue first so the approach can be discussed.
+
+## License
+
+No license file is included in this repository yet. Rights remain with the author until a license is added.
