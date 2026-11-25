@@ -1,13 +1,13 @@
 # AI Conflict Resolution Assistant
 
-A multi-agent system that analyzes tense text conversations, maps emotional escalation, and suggests empathetic, boundary-respecting replies. It combines lightweight scikit-learn classifiers for line-level emotion and conflict detection with a CrewAI agent crew powered by Groq (Llama 3.1).
+A multi-agent system that analyzes tense text conversations, maps emotional escalation, and suggests empathetic, boundary-respecting replies. It combines lightweight scikit-learn classifiers for line-level emotion and conflict detection with a CrewAI agent crew powered by Groq (`openai/gpt-oss-20b`).
 
 ## Features
 
 - **Automatic classifier setup** — On first import, `ml_models.py` trains TF-IDF + Logistic Regression models on synthetic data and saves them under `models/` for reuse.
 - **Emotional timeline tool** — Agents call `Analyze Emotional Timeline` to label each utterance with emotion and conflict risk before reasoning.
 - **Sequential multi-agent report** — Emotional Analyst → Perspective Balancer → De-escalation Coach produce a structured resolution report.
-- **Low-latency LLM inference** — Language model calls go through Groq (`groq/llama-3.1-8b-instant`).
+- **Low-latency LLM inference** — Language model calls go through Groq (`groq/openai/gpt-oss-20b`) via LiteLLM.
 
 ## Architecture
 
@@ -57,12 +57,16 @@ AI-Conflict-Resolution-Assistant/
 
 ## Prerequisites
 
-- Python 3.10 or newer
+- Python **3.10–3.12** (Python 3.14 is not supported by this dependency stack)
 - A [Groq](https://console.groq.com/) API key
 
 ## Installation
 
+Use a project virtual environment so packages do not conflict with other Python installs:
+
 ```bash
+# Prefer an explicit 3.10/3.11/3.12 interpreter when multiple are installed
+# Windows example: py -3.10 -m venv .venv
 python -m venv .venv
 
 # Windows
@@ -71,8 +75,11 @@ python -m venv .venv
 # macOS / Linux
 source .venv/bin/activate
 
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
+
+Always activate `.venv` before running or installing packages for this project.
 
 ## Configuration
 
@@ -142,7 +149,3 @@ The De-escalation Coach is instructed to return a report with exactly these sect
 ## Contributing
 
 Issues and pull requests are welcome. For larger changes, open an issue first so the approach can be discussed.
-
-## License
-
-No license file is included in this repository yet. Rights remain with the author until a license is added.

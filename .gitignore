@@ -1,0 +1,23 @@
+﻿# Virtual environment
+.venv/
+venv/
+env/
+
+# Secrets
+.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.class
+*.pyo
+
+# Trained ML artifacts (recreated on first run)
+models/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

@@ -13,7 +13,7 @@ if API_KEY is None:
     
 # Initialixing LLM
 llm = LLM(
-    model="groq/llama-3.1-8b-instant",
+    model="groq/openai/gpt-oss-20b",
     api_key=API_KEY
 )
 
@@ -31,14 +31,6 @@ perspective_balancer = Agent(
     role="Perspective Balancer",
     backstory="A neutral mediator who helps users see the other side.",
     goal="Explain what the other person (not the user) is likely feeling to encourage empathy.",
-    llm=llm,
-    verbose=True
-)
-
-boundary_guardian = Agent(
-    role="Boundary Guardian",
-    backstory="An assertive coach focused on protecting user boundaries.",
-    goal="Recommend response strategies that protect the user from verbal abuse or boundary violations. NEVER suggest manipulative tactics.",
     llm=llm,
     verbose=True
 )
@@ -87,7 +79,8 @@ synthesis_task = Task(
 #Crew Orchestration Export
 def create_crew() -> Crew:
     return Crew(
-        agents=[emotional_analyst, perspective_balancer, boundary_guardian, de_escalation_coach],
+        #agents=[emotional_analyst, perspective_balancer, boundary_guardian, de_escalation_coach],
+        agents=[emotional_analyst, perspective_balancer, de_escalation_coach],
         tasks=[emotion_task, perspective_task, synthesis_task],
         process=Process.sequential,
         verbose=True

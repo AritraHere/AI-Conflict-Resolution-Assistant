@@ -1,5 +1,3 @@
-import os
-import pickle
 from typing import List
 
 from crewai.tools import tool
